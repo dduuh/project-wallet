@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"wallet-service/internal/repository"
-	"wallet-service/internal/service"
 	"wallet-service/internal/transport/kafka/consumer"
 
 	"github.com/sirupsen/logrus"
@@ -27,26 +26,16 @@ func main() {
 		logrus.Panicf("Postgres error: %v\n", err)
 	}
 
-	// init migrations
-	migrats, err := postgresql.NewMigrations(cfg.PostgreSQL(), "file://migrations")
-	if err != nil {
+	// up migrations
+	if err := psql.Up(); err != nil {
 		logrus.Panicf("Migrations error: %v\n", err)
 	}
 
-	// Up migrations
-	err = migrats.Up()
-	if err != nil {
-		logrus.Panicf("Migrations UP is failed: %v\n", err)
-	}
-
 	// init repository
-	repo := repository.NewUsersRepository(psql)
-
-	// init service
-	service := service.NewService(repo)
+	repo := repository.NewUsersRepository(psql.Database())
 
 	// init kafka consumer
-	consumer := consumer.New(cfg.KafkaCfg.Brokers, cfg.KafkaCfg.Topic, cfg.KafkaCfg.GroupID)
+	consumer := consumer.New(*cfg, repo)
 
 	// start consuming
 	if err := consumer.Consume(ctx); err != nil {

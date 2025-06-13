@@ -2,6 +2,7 @@ package consumer
 
 import (
 	"context"
+	configs "wallet-service/internal/config"
 	"wallet-service/internal/domain"
 
 	"github.com/segmentio/kafka-go"
@@ -9,18 +10,19 @@ import (
 )
 
 type Consumer struct {
-	kf *kafka.Reader
+	kf   *kafka.Reader
+	repo usersDb
 }
 
 type usersDb interface {
 	UpsertUser(ctx context.Context, user domain.User) error
 }
 
-func New(brokers []string, topic, groupId string) *Consumer {
+func New(cfg configs.Config, repo usersDb) *Consumer {
 	kf := kafka.NewReader(kafka.ReaderConfig{
-		Brokers: brokers,
-		GroupID: groupId,
-		Topic:   topic,
+		Brokers: cfg.KafkaCfg.Brokers,
+		GroupID: cfg.KafkaCfg.GroupID,
+		Topic:   cfg.KafkaCfg.Topic,
 	})
 
 	return &Consumer{
