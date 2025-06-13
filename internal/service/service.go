@@ -1,17 +1,15 @@
 package service
 
 import (
-	"wallet-service/internal/domain"
 	"wallet-service/internal/repository"
 )
 
-type Auth interface {
-	CreateUser(user domain.User) (int, error)
-}
-
 type Service struct {
+	repo *repository.UsersRepository
 }
 
-func NewService(repo *repository.Repository) *Service {
-	return &Service{}
+func NewService(repo *repository.UsersRepository) *Service {
+	return &Service{
+		repo: repo,
+	}
 }

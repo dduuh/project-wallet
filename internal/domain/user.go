@@ -1,7 +1,9 @@
 package domain
 
+import "time"
+
 type User struct {
-	Name   string `json:"name"`
-	Age    uint8  `json:"age"`
-	Gender string `json:"gender"`
+	Id        int        `json:"id"`
+	BlockedAt *time.Time `json:"blocked_at"`
+	DeletedAt *time.Time `json:"deleted_at"`
 }

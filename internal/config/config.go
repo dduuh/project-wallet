@@ -1,6 +1,8 @@
 package configs
 
 import (
+	"fmt"
+
 	"github.com/kelseyhightower/envconfig"
 )
 
@@ -8,6 +10,7 @@ type (
 	Config struct {
 		HTTPCfg       HTTPConfig
 		PostgreSQLCfg PostgreSQLConfig
+		KafkaCfg      KafkaConfig
 	}
 
 	HTTPConfig struct {
@@ -23,6 +26,12 @@ type (
 		DBName   string `envconfig:"POSTGRES_DBNAME"`
 		SSLMode  string `envconfig:"POSTGRES_SSLMODE" default:"disable"`
 	}
+
+	KafkaConfig struct {
+		Brokers []string `envconfig:"KAFKA_BROKERS"`
+		GroupID string   `envconfig:"KAFKA_GROUP_ID"`
+		Topic   string   `envconfig:"KAFKA_TOPIC"`
+	}
 )
 
 func Init() (*Config, error) {
@@ -33,4 +42,14 @@ func Init() (*Config, error) {
 	}
 
 	return &cfg, nil
+}
+
+func (c *Config) PostgreSQL() string {
+	return fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s",
+		c.PostgreSQLCfg.Host,
+		c.PostgreSQLCfg.Port,
+		c.PostgreSQLCfg.User,
+		c.PostgreSQLCfg.Password,
+		c.PostgreSQLCfg.DBName,
+		c.PostgreSQLCfg.SSLMode)
 }
