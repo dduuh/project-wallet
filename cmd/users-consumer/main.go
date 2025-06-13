@@ -2,14 +2,14 @@ package main
 
 import (
 	"context"
-	configs "wallet-service/internal/config"
-	"wallet-service/internal/migrations"
 	"wallet-service/internal/repository"
 	"wallet-service/internal/service"
 	"wallet-service/internal/transport/kafka/consumer"
-	"wallet-service/pkg/psql"
 
 	"github.com/sirupsen/logrus"
+
+	configs "wallet-service/internal/config"
+	postgresql "wallet-service/internal/repository/psql"
 )
 
 func main() {
@@ -22,13 +22,13 @@ func main() {
 	}
 
 	// init db
-	psql, err := psql.NewPostgreSQL(cfg)
+	psql, err := postgresql.New(cfg)
 	if err != nil {
 		logrus.Panicf("Postgres error: %v\n", err)
 	}
 
 	// init migrations
-	migrats, err := migrations.New(cfg.PostgreSQL(), "file://migrations")
+	migrats, err := postgresql.NewMigrations(cfg.PostgreSQL(), "file://migrations")
 	if err != nil {
 		logrus.Panicf("Migrations error: %v\n", err)
 	}

@@ -1,4 +1,4 @@
-package migrations
+package psql
 
 import "github.com/golang-migrate/migrate/v4"
 
@@ -6,7 +6,7 @@ type migrations struct {
 	migr *migrate.Migrate
 }
 
-func New(src, dsn string) (*migrations, error) {
+func NewMigrations(src, dsn string) (*migrations, error) {
 	migr, err := migrate.New(src, dsn)
 	if err != nil {
 		return nil, err
