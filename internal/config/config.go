@@ -22,8 +22,8 @@ type (
 		Host     string `envconfig:"POSTGRES_HOST" default:"localhost"`
 		Port     string `envconfig:"POSTGRES_PORT" default:"5432"`
 		User     string `envconfig:"POSTGRES_USER" default:"postgres"`
-		Password string `envconfig:"POSTGRES_PASSWORD"`
-		DBName   string `envconfig:"POSTGRES_DBNAME"`
+		Password string `envconfig:"POSTGRES_PASSWORD" default:"David3410"`
+		DBName   string `envconfig:"POSTGRES_DBNAME" default:"postgres"`
 		SSLMode  string `envconfig:"POSTGRES_SSLMODE" default:"disable"`
 	}
 
@@ -46,10 +46,10 @@ func Init() (*Config, error) {
 
 func (c *Config) PostgreSQL() string {
 	return fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s",
-		c.PostgreSQLCfg.Host,
-		c.PostgreSQLCfg.Port,
 		c.PostgreSQLCfg.User,
 		c.PostgreSQLCfg.Password,
+		c.PostgreSQLCfg.Host,
+		c.PostgreSQLCfg.Port,
 		c.PostgreSQLCfg.DBName,
 		c.PostgreSQLCfg.SSLMode)
 }

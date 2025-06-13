@@ -9,6 +9,10 @@ import (
 
 	configs "wallet-service/internal/config"
 	postgresql "wallet-service/internal/repository/psql"
+
+	_ "github.com/golang-migrate/migrate/v4/source/file"
+	_ "github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/lib/pq"
 )
 
 func main() {

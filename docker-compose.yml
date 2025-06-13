@@ -1,21 +1,4 @@
 services:
-  app:
-    build: .
-    ports:
-      - "8080:8080"
-    environment:
-      - HTTP_HOST=localhost
-      - HTTP_PORT=8080
-      - POSTGRES_HOST=localhost
-      - POSTGRES_PORT=5432
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=David3410
-      - POSTGRES_DBNAME=wallets
-      - POSTGRES_SSLMODE=disable
-    depends_on:
-      - postgres
-      - kafka
-
   postgres:
     image: postgres:15
     ports:
