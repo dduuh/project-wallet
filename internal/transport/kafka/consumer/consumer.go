@@ -2,6 +2,7 @@ package consumer
 
 import (
 	"context"
+	"encoding/json"
 	configs "wallet-service/internal/config"
 	"wallet-service/internal/domain"
 
@@ -18,7 +19,7 @@ type usersDb interface {
 	UpsertUser(ctx context.Context, user domain.User) error
 }
 
-func New(cfg configs.Config, repo usersDb) *Consumer {
+func New(cfg *configs.Config, repo usersDb) *Consumer {
 	kf := kafka.NewReader(kafka.ReaderConfig{
 		Brokers: cfg.KafkaCfg.Brokers,
 		GroupID: cfg.KafkaCfg.GroupID,
@@ -37,7 +38,16 @@ func (c *Consumer) Consume(ctx context.Context) error {
 			return err
 		}
 
-		logrus.Printf("topic: %s message: %v", msg.Topic, msg.Value)
+		var user domain.User
+		if err := json.Unmarshal(msg.Value, &user); err != nil {
+			return err
+		}
+
+		if err := c.repo.UpsertUser(ctx, user); err != nil {
+			return err
+		}
+
+		logrus.Printf("topic: %s message: %s", msg.Topic, string(msg.Value))
 	}
 }
 

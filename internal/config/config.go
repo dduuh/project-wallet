@@ -28,9 +28,9 @@ type (
 	}
 
 	KafkaConfig struct {
-		Brokers []string `envconfig:"KAFKA_BROKERS"`
-		GroupID string   `envconfig:"KAFKA_GROUP_ID"`
-		Topic   string   `envconfig:"KAFKA_TOPIC"`
+		Brokers []string `envconfig:"KAFKA_BROKERS" default:"localhost:9092"`
+		GroupID string   `envconfig:"KAFKA_GROUP_ID" default:"wallet_users"`
+		Topic   string   `envconfig:"KAFKA_TOPIC" default:"users"`
 	}
 )
 

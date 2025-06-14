@@ -2,16 +2,19 @@ package main
 
 import (
 	"context"
+	"encoding/json"
+	"wallet-service/internal/domain"
 	"wallet-service/internal/repository"
 	"wallet-service/internal/transport/kafka/consumer"
+	"wallet-service/internal/transport/kafka/producer"
 
 	"github.com/sirupsen/logrus"
 
 	configs "wallet-service/internal/config"
 	postgresql "wallet-service/internal/repository/psql"
 
-	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/lib/pq"
 )
 
@@ -32,18 +35,39 @@ func main() {
 
 	// up migrations
 	if err := psql.Up(); err != nil {
-		logrus.Panicf("Migrations error: %v\n", err)
+		if err.Error() == "no change" {
+			logrus.Info("No migrations to apply.")
+		} else {
+			logrus.Panicf("Migrations error: %v\n", err)
+		}
 	}
 
 	// init repository
 	repo := repository.NewUsersRepository(psql.Database())
 
+	// init producer
+	producer := producer.New(cfg)
+
+	user := &domain.User{
+		Id:        1,
+		BlockedAt: nil,
+		DeletedAt: nil,
+	}
+
+	userData, err := json.Marshal(user)
+	if err != nil {
+		logrus.Panicf("JSON Marshal error: %v\n", err)
+	}
+
+	if err := producer.Produce(ctx, userData); err != nil {
+		logrus.Panicf("Producer error: %v\n", err)
+	}
+
 	// init kafka consumer
-	consumer := consumer.New(*cfg, repo)
+	consumer := consumer.New(cfg, repo)
 
 	// start consuming
 	if err := consumer.Consume(ctx); err != nil {
 		logrus.Panicf("Consumer error: %v\n", err)
 	}
-
 }
