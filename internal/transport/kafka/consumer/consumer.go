@@ -28,10 +28,12 @@ func New(cfg *configs.Config, repo usersDb) *Consumer {
 
 	return &Consumer{
 		kf: kf,
+		repo: repo,
 	}
 }
 
 func (c *Consumer) Consume(ctx context.Context) error {
+	logrus.Info("Consuming messages...")
 	for {
 		msg, err := c.kf.ReadMessage(ctx)
 		if err != nil {

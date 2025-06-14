@@ -12,7 +12,7 @@ services:
     container_name: kafka-wallet
     image: docker.io/bitnami/kafka:latest
     ports:
-      - "9092:9092"
+      - "9094:9094"
     environment:
       - KAFKA_CFG_NODE_ID=0
       - KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=true

@@ -1,17 +1,28 @@
 package generator
 
-import "github.com/brianvoe/gofakeit"
+import (
+	"encoding/json"
+
+	"github.com/brianvoe/gofakeit"
+)
 
 type UserGenerator struct {
 	Name   string
-	Age    int32
+	Age    int64
 	Gender string
 }
 
-func NewUserGenerator() *UserGenerator {
-	return &UserGenerator{
+func GenerateUser() ([]byte, error) {
+	fakeUser := &UserGenerator{
 		Name:   gofakeit.BeerName(),
-		Age:    gofakeit.Int32(),
+		Age:    gofakeit.Int64(),
 		Gender: gofakeit.Gender(),
 	}
+
+	fakeUserBytes, err := json.Marshal(fakeUser)
+	if err != nil {
+		return nil, err
+	}
+
+	return fakeUserBytes, nil
 }

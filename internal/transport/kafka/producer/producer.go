@@ -6,6 +6,7 @@ import (
 	configs "wallet-service/internal/config"
 
 	"github.com/segmentio/kafka-go"
+	"github.com/sirupsen/logrus"
 )
 
 type Producer struct {
@@ -23,7 +24,8 @@ func New(cfg *configs.Config) *Producer {
 	}
 }
 
-func (p *Producer) Produce(ctx context.Context, value []byte) error {
+func (p *Producer) Produce(cfg *configs.Config, ctx context.Context, value []byte) error {
+	logrus.Info("Writing a messages")
 	err := p.producer.WriteMessages(ctx, kafka.Message{
 		Value: value,
 		Time:  time.Now(),
