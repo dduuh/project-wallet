@@ -1,15 +1,79 @@
 package service
 
 import (
+	"context"
+	"errors"
+	"fmt"
+	"wallet-service/internal/domain"
 	"wallet-service/internal/repository"
+
+	"github.com/google/uuid"
 )
 
-type Service struct {
-	repo *repository.UsersRepository
+var (
+	ErrCreateWallet = errors.New("failed to create the wallet")
+	ErrGetWallet    = errors.New("failed to get the wallet")
+	ErrGetWallets   = errors.New("failed to get a wallets")
+	ErrUpdateWallet = errors.New("failed to update the wallet")
+	ErrDeleteWallet = errors.New("failed to delete the wallet")
+)
+
+type wallets interface {
+	CreateWallet(ctx context.Context, wallet domain.Wallet, userId string) (domain.Wallet, error)
+	GetWallet(ctx context.Context, walletId uuid.UUID, userId string) (domain.Wallet, error)
+	GetWallets(ctx context.Context, userId string) ([]domain.Wallet, error)
+	UpdateWallet(ctx context.Context, walletId uuid.UUID, userId string, wallet domain.WalletUpdate) (domain.Wallet, error)
+	DeleteWallet(ctx context.Context, walletId uuid.UUID, userId string) error
 }
 
-func NewService(repo *repository.UsersRepository) *Service {
+type Service struct {
+	repo     *repository.UsersRepository
+	walletDb wallets
+}
+
+func New(repo *repository.UsersRepository, walletDb wallets) *Service {
 	return &Service{
-		repo: repo,
+		repo:     repo,
+		walletDb: walletDb,
 	}
+}
+
+func (s *Service) CreateWallet(ctx context.Context, wallet domain.Wallet, userId string) (domain.Wallet, error) {
+	newWallet, err := s.walletDb.CreateWallet(ctx, wallet, userId)
+	if err != nil {
+		return domain.Wallet{}, fmt.Errorf("%w: %s", ErrCreateWallet, err.Error())
+	}
+	return newWallet, nil
+}
+
+func (s *Service) GetWallet(ctx context.Context, walletId uuid.UUID, userId string) (domain.Wallet, error) {
+	wallet, err := s.walletDb.GetWallet(ctx, walletId, userId)
+	if err != nil {
+		return domain.Wallet{}, fmt.Errorf("%w: %s", ErrGetWallet, err.Error())
+	}
+	return wallet, nil
+}
+
+func (s *Service) GetWallets(ctx context.Context, userId string) ([]domain.Wallet, error) {
+	wallets, err := s.walletDb.GetWallets(ctx, userId)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %s", ErrGetWallets, err.Error())
+	}
+	return wallets, nil
+}
+
+func (s *Service) UpdateWallet(ctx context.Context, walletId uuid.UUID, userId string, wallet domain.WalletUpdate) (domain.Wallet, error) {
+	updatedWallet, err := s.walletDb.UpdateWallet(ctx, walletId, userId, wallet)
+	if err != nil {
+		return domain.Wallet{}, fmt.Errorf("%w: %s", ErrUpdateWallet, err.Error())
+	}
+	return updatedWallet, nil
+}
+
+func (s *Service) DeleteWallet(ctx context.Context, walletId uuid.UUID, userId string) error {
+	err := s.walletDb.DeleteWallet(ctx, walletId, userId)
+	if err != nil {
+		return fmt.Errorf("%w: %s", ErrDeleteWallet, err.Error())
+	}
+	return nil
 }

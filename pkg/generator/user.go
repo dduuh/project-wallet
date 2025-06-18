@@ -7,9 +7,9 @@ import (
 )
 
 type UserGenerator struct {
-	Name   string
-	Age    int64
-	Gender string
+	Name   string `json:"name"`
+	Age    int64  `json:"age"`
+	Gender string `json:"gender"`
 }
 
 func GenerateUser() ([]byte, error) {

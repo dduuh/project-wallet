@@ -2,4 +2,17 @@ CREATE TABLE users (
     id UUID UNIQUE PRIMARY KEY NOT NULL,
     blocked_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
     deleted_at TIMESTAMP WITH TIME ZONE DEFAULT now()
-)
+);
+
+CREATE TABLE wallets (
+    id UUID UNIQUE PRIMARY KEY NOT NULL,
+    user_id UUID NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    balance FLOAT NOT NULL,
+    currency VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+    deleted_at TIMESTAMP,
+
+    CONSTRAINT fk_wallets FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+);

@@ -6,6 +6,7 @@ import (
 	configs "wallet-service/internal/config"
 	"wallet-service/internal/domain"
 
+	"github.com/google/uuid"
 	"github.com/segmentio/kafka-go"
 	"github.com/sirupsen/logrus"
 )
@@ -17,6 +18,7 @@ type Consumer struct {
 
 type usersDb interface {
 	UpsertUser(ctx context.Context, user domain.User) error
+	GetUser(ctx context.Context, user uuid.UUID) (domain.User, error)
 }
 
 func New(cfg *configs.Config, repo usersDb) *Consumer {
@@ -27,7 +29,7 @@ func New(cfg *configs.Config, repo usersDb) *Consumer {
 	})
 
 	return &Consumer{
-		kf: kf,
+		kf:   kf,
 		repo: repo,
 	}
 }

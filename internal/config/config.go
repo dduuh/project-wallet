@@ -2,6 +2,8 @@ package configs
 
 import (
 	"fmt"
+	"net"
+	"time"
 
 	"github.com/kelseyhightower/envconfig"
 )
@@ -14,8 +16,9 @@ type (
 	}
 
 	HTTPConfig struct {
-		Host string `envconfig:"HTTP_HOST" default:"localhost"`
-		Port string `envconfig:"HTTP_PORT" default:"8080"`
+		Port         string        `envconfig:"HTTP_PORT" default:"8080"`
+		ReadTimeout  time.Duration `envconfig:"HTTP_READ_TIMEOUT" default:"10s"`
+		WriteTimeout time.Duration `envconfig:"HTTP_WRITE_TIMEOUT" default:"10s"`
 	}
 
 	PostgreSQLConfig struct {
@@ -45,11 +48,12 @@ func Init() (*Config, error) {
 }
 
 func (c *Config) PostgreSQL() string {
-	return fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s",
+	hostPort := net.JoinHostPort(c.PostgreSQLCfg.Host, c.PostgreSQLCfg.Port)
+
+	return fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=%s",
 		c.PostgreSQLCfg.User,
 		c.PostgreSQLCfg.Password,
-		c.PostgreSQLCfg.Host,
-		c.PostgreSQLCfg.Port,
+		hostPort,
 		c.PostgreSQLCfg.DBName,
 		c.PostgreSQLCfg.SSLMode)
 }

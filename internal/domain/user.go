@@ -1,9 +1,13 @@
 package domain
 
-import "time"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type User struct {
-	Id        string     `json:"id"`
-	BlockedAt *time.Time `json:"blocked_at"`
-	DeletedAt *time.Time `json:"deleted_at"`
+	Id        uuid.UUID  `json:"id" db:"id"`
+	BlockedAt *time.Time `json:"blockedAt" db:"blocked_at"`
+	DeletedAt *time.Time `json:"deletedAt" db:"deleted_at"`
 }

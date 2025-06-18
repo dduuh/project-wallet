@@ -7,3 +7,9 @@ run-consumer:
 
 run-producer:
 	go run cmd/users-producer/main.go
+
+run-server:
+	go run cmd/server/main.go
+
+target-lint:
+	golangci-lint run -c .golangci.yml

@@ -4,6 +4,7 @@ import (
 	"context"
 	"wallet-service/internal/domain"
 
+	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -31,4 +32,16 @@ func (u *UsersRepository) UpsertUser(ctx context.Context, user domain.User) erro
 	}
 
 	return nil
+}
+
+func (u *UsersRepository) GetUser(ctx context.Context, userId uuid.UUID) (domain.User, error) {
+	var user domain.User
+
+	query := `SELECT id, blocked_at, deleted_at FROM users WHERE id = $1`
+
+	if err := u.psql.QueryRowContext(ctx, query, userId).Scan(&user.Id, &user.BlockedAt, &user.DeletedAt); err != nil {
+		return domain.User{}, err
+	}
+
+	return user, nil
 }
