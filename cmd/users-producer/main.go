@@ -5,11 +5,11 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
-	configs "wallet-service/internal/config"
-	"wallet-service/internal/transport/kafka/producer"
-	"wallet-service/pkg/generator"
 
 	"github.com/sirupsen/logrus"
+	configs "wallet-service/internal/config"
+	"wallet-service/internal/generator"
+	"wallet-service/internal/transport/kafka/producer"
 )
 
 func main() {

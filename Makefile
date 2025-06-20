@@ -11,5 +11,10 @@ run-producer:
 run-server:
 	go run cmd/server/main.go
 
-target-lint:
-	golangci-lint run -c .golangci.yml
+tidy:
+	go mod tidy
+
+lint: tidy
+	gofumpt -w .
+	gci write . --skip-generated -s standard -s default -s "prefix(lookaround.gitlab.yandexcloud.net/back/lookaround)"
+	golangci-lint run ./...

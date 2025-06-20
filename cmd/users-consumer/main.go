@@ -2,17 +2,17 @@ package main
 
 import (
 	"context"
-	"wallet-service/internal/repository"
-	"wallet-service/internal/transport/kafka/consumer"
+	"errors"
 
-	"github.com/sirupsen/logrus"
-
-	configs "wallet-service/internal/config"
-	postgresql "wallet-service/internal/repository/psql"
-
+	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/lib/pq"
+	"github.com/sirupsen/logrus"
+	configs "wallet-service/internal/config"
+	"wallet-service/internal/repository"
+	postgresql "wallet-service/internal/repository/psql"
+	"wallet-service/internal/transport/kafka/consumer"
 )
 
 func main() {
@@ -29,7 +29,7 @@ func main() {
 	}
 
 	if err := psql.Up(); err != nil {
-		if err.Error() == "no change" {
+		if errors.Is(err, migrate.ErrNoChange) {
 			logrus.Info("No migrations to apply.")
 		} else {
 			logrus.Panicf("Migrations error: %v\n", err)

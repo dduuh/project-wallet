@@ -2,6 +2,7 @@ package generator
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/brianvoe/gofakeit"
 )
@@ -21,7 +22,7 @@ func GenerateUser() ([]byte, error) {
 
 	fakeUserBytes, err := json.Marshal(fakeUser)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to marshal UserGenerator: %w", err)
 	}
 
 	return fakeUserBytes, nil

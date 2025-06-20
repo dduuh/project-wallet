@@ -2,10 +2,11 @@ package producer
 
 import (
 	"context"
+	"fmt"
 	"time"
-	configs "wallet-service/internal/config"
 
 	"github.com/segmentio/kafka-go"
+	configs "wallet-service/internal/config"
 )
 
 type Producer struct {
@@ -14,8 +15,8 @@ type Producer struct {
 
 func New(cfg *configs.Config) *Producer {
 	producer := kafka.NewWriter(kafka.WriterConfig{
-		Brokers: cfg.KafkaCfg.Brokers,
-		Topic:   cfg.KafkaCfg.Topic,
+		Brokers: cfg.Kafka.Brokers,
+		Topic:   cfg.Kafka.Topic,
 	})
 
 	return &Producer{
@@ -29,12 +30,16 @@ func (p *Producer) Produce(cfg *configs.Config, ctx context.Context, value []byt
 		Time:  time.Now(),
 	})
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to produce a messages: %w", err)
 	}
 
 	return nil
 }
 
 func (p *Producer) Close() error {
-	return p.producer.Close()
+	if err := p.producer.Close(); err != nil {
+		return fmt.Errorf("failed to close Kafka producer: %w", err)
+	}
+
+	return nil
 }

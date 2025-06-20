@@ -10,9 +10,9 @@ import (
 
 type (
 	Config struct {
-		HTTPCfg       HTTPConfig
-		PostgreSQLCfg PostgreSQLConfig
-		KafkaCfg      KafkaConfig
+		HTTP     HTTPConfig
+		Postgres PostgreSQLConfig
+		Kafka    KafkaConfig
 	}
 
 	HTTPConfig struct {
@@ -41,19 +41,19 @@ func Init() (*Config, error) {
 	var cfg Config
 
 	if err := envconfig.Process("", &cfg); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to process all configs: %w", err)
 	}
 
 	return &cfg, nil
 }
 
 func (c *Config) PostgreSQL() string {
-	hostPort := net.JoinHostPort(c.PostgreSQLCfg.Host, c.PostgreSQLCfg.Port)
+	hostPort := net.JoinHostPort(c.Postgres.Host, c.Postgres.Port)
 
 	return fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=%s",
-		c.PostgreSQLCfg.User,
-		c.PostgreSQLCfg.Password,
+		c.Postgres.User,
+		c.Postgres.Password,
 		hostPort,
-		c.PostgreSQLCfg.DBName,
-		c.PostgreSQLCfg.SSLMode)
+		c.Postgres.DBName,
+		c.Postgres.SSLMode)
 }

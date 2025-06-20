@@ -1,17 +1,15 @@
 package main
 
 import (
+	_ "github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
+	_ "github.com/lib/pq"
+	"github.com/sirupsen/logrus"
 	configs "wallet-service/internal/config"
 	"wallet-service/internal/repository"
 	postgresql "wallet-service/internal/repository/psql"
 	"wallet-service/internal/service"
 	"wallet-service/internal/transport/rest"
-
-	"github.com/sirupsen/logrus"
-
-	_ "github.com/golang-migrate/migrate/v4/database/postgres"
-	_ "github.com/golang-migrate/migrate/v4/source/file"
-	_ "github.com/lib/pq"
 )
 
 func main() {
@@ -36,11 +34,13 @@ func main() {
 	repo := repository.NewUsersRepository(psql.Database())
 	walletRepo := repository.NewWalletRepository(psql.Database())
 	services := service.New(repo, walletRepo)
-	handlers := rest.New(services, repo)
+	server := rest.New(services, repo)
 
-	logrus.Infof("HTTP Server started on port %s\n", cfg.HTTPCfg.Port)
+	logrus.Infof("HTTP Server started on port %s\n", cfg.HTTP.Port)
 
-	if err := handlers.Run(cfg, handlers.InitRoutes()); err != nil {
-		logrus.Panicf("HTTP Server error: %v\n", err)
-	}
+	go func() {
+		if err := server.Run(cfg, server.InitRoutes()); err != nil {
+			logrus.Panicf("HTTP Server error: %v\n", err)
+		}
+	}()
 }

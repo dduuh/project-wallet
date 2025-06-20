@@ -2,10 +2,11 @@ package repository
 
 import (
 	"context"
-	"wallet-service/internal/domain"
+	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
+	"wallet-service/internal/domain"
 )
 
 type UsersRepository struct {
@@ -28,7 +29,7 @@ func (u *UsersRepository) UpsertUser(ctx context.Context, user domain.User) erro
 
 	_, err := u.psql.ExecContext(ctx, query, user.Id, user.BlockedAt, user.DeletedAt)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to UpsertUser: %w", err)
 	}
 
 	return nil
@@ -40,7 +41,7 @@ func (u *UsersRepository) GetUser(ctx context.Context, userId uuid.UUID) (domain
 	query := `SELECT id, blocked_at, deleted_at FROM users WHERE id = $1`
 
 	if err := u.psql.QueryRowContext(ctx, query, userId).Scan(&user.Id, &user.BlockedAt, &user.DeletedAt); err != nil {
-		return domain.User{}, err
+		return domain.User{}, fmt.Errorf("failed to get User: %w", err)
 	}
 
 	return user, nil

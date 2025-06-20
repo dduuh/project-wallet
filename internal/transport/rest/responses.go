@@ -8,9 +8,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-var (
-	ErrHTTPMethod = errors.New("incorrect HTTP method")
-)
+var ErrHTTPMethod = errors.New("incorrect HTTP method")
 
 type Map map[string]interface{}
 
@@ -21,7 +19,7 @@ func response(w http.ResponseWriter, statusCode int, message any) {
 	if statusCode == http.StatusNoContent {
 		return
 	}
-	
+
 	resp, err := json.Marshal(message)
 	if err != nil {
 		logrus.Panicf("JSON Marshal error: %v\n", err)

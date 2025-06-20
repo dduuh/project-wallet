@@ -4,10 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"wallet-service/internal/domain"
-	"wallet-service/internal/repository"
 
 	"github.com/google/uuid"
+	"wallet-service/internal/domain"
+	"wallet-service/internal/repository"
 )
 
 var (
@@ -41,39 +41,44 @@ func New(repo *repository.UsersRepository, walletDb wallets) *Service {
 func (s *Service) CreateWallet(ctx context.Context, wallet domain.Wallet, userId string) (domain.Wallet, error) {
 	newWallet, err := s.walletDb.CreateWallet(ctx, wallet, userId)
 	if err != nil {
-		return domain.Wallet{}, fmt.Errorf("%w: %s", ErrCreateWallet, err.Error())
+		return domain.Wallet{}, fmt.Errorf("%w: %w", ErrCreateWallet, err)
 	}
+
 	return newWallet, nil
 }
 
 func (s *Service) GetWallet(ctx context.Context, walletId uuid.UUID, userId string) (domain.Wallet, error) {
 	wallet, err := s.walletDb.GetWallet(ctx, walletId, userId)
 	if err != nil {
-		return domain.Wallet{}, fmt.Errorf("%w: %s", ErrGetWallet, err.Error())
+		return domain.Wallet{}, fmt.Errorf("%w: %w", ErrGetWallet, err)
 	}
+
 	return wallet, nil
 }
 
 func (s *Service) GetWallets(ctx context.Context, userId string) ([]domain.Wallet, error) {
 	wallets, err := s.walletDb.GetWallets(ctx, userId)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %s", ErrGetWallets, err.Error())
+		return nil, fmt.Errorf("%w: %w", ErrGetWallets, err)
 	}
+
 	return wallets, nil
 }
 
 func (s *Service) UpdateWallet(ctx context.Context, walletId uuid.UUID, userId string, wallet domain.WalletUpdate) (domain.Wallet, error) {
 	updatedWallet, err := s.walletDb.UpdateWallet(ctx, walletId, userId, wallet)
 	if err != nil {
-		return domain.Wallet{}, fmt.Errorf("%w: %s", ErrUpdateWallet, err.Error())
+		return domain.Wallet{}, fmt.Errorf("%w: %w", ErrUpdateWallet, err)
 	}
+
 	return updatedWallet, nil
 }
 
 func (s *Service) DeleteWallet(ctx context.Context, walletId uuid.UUID, userId string) error {
 	err := s.walletDb.DeleteWallet(ctx, walletId, userId)
 	if err != nil {
-		return fmt.Errorf("%w: %s", ErrDeleteWallet, err.Error())
+		return fmt.Errorf("%w: %w", ErrDeleteWallet, err)
 	}
+
 	return nil
 }
