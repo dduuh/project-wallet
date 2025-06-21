@@ -5,10 +5,11 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/gorilla/mux"
 	configs "wallet-service/internal/config"
 	"wallet-service/internal/repository"
 	"wallet-service/internal/service"
+
+	"github.com/gorilla/mux"
 )
 
 const maxHeaderBytes = 1 << 20
@@ -26,7 +27,7 @@ func New(services *service.Service, userRepo *repository.UsersRepository) *Serve
 	}
 }
 
-func (s *Server) Run(cfg *configs.Config, handler http.Handler) error {
+func (s *Server) Run(ctx context.Context, cfg *configs.Config, handler http.Handler) error {
 	s.server = &http.Server{
 		Addr:           ":" + cfg.HTTP.Port,
 		Handler:        handler,

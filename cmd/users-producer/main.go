@@ -6,11 +6,10 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/sirupsen/logrus"
 	configs "wallet-service/internal/config"
 	"wallet-service/internal/generator"
 	"wallet-service/internal/transport/kafka/producer"
-
-	"github.com/sirupsen/logrus"
 )
 
 func main() {

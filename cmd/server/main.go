@@ -6,19 +6,19 @@ import (
 	"os/signal"
 	"syscall"
 
+	_ "github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
+	_ "github.com/lib/pq"
+	"github.com/sirupsen/logrus"
 	configs "wallet-service/internal/config"
 	"wallet-service/internal/repository"
 	postgresql "wallet-service/internal/repository/psql"
 	"wallet-service/internal/service"
 	"wallet-service/internal/transport/rest"
-
-	_ "github.com/golang-migrate/migrate/v4/database/postgres"
-	_ "github.com/golang-migrate/migrate/v4/source/file"
-	_ "github.com/lib/pq"
-	"github.com/sirupsen/logrus"
 )
 
 func main() {
+	ctx := context.Background()
 	cfg, err := configs.Init()
 	if err != nil {
 		logrus.Panicf("Configs error: %v\n", err)
@@ -48,14 +48,14 @@ func main() {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 
 	go func() {
-		if err := server.Run(cfg, server.InitRoutes()); err != nil {
+		if err := server.Run(ctx, cfg, server.InitRoutes()); err != nil {
 			logrus.Panicf("HTTP Server error: %v\n", err)
 		}
 	}()
 
 	<-quit
 
-	if err := server.Shutdown(context.Background()); err != nil {
+	if err := server.Shutdown(ctx); err != nil {
 		logrus.Panicf("HTTP Server Shutdown error: %v\n", err)
 	}
 
