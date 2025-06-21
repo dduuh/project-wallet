@@ -1,7 +1,9 @@
 package tests
 
 import (
+	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/suite"
 	configs "wallet-service/internal/config"
@@ -16,6 +18,7 @@ type IntegrationTestSuite struct {
 	suite.Suite
 
 	cfg         *configs.Config
+	cancel      context.CancelFunc
 	psql        *psql.PostgresDB
 	usersRepo   *repository.UsersRepository
 	walletsRepo *repository.WalletDB
@@ -25,6 +28,10 @@ type IntegrationTestSuite struct {
 }
 
 func (s *IntegrationTestSuite) SetupSuite() {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	s.cancel = cancel
+
 	var err error
 
 	s.cfg, err = configs.Init()
@@ -44,13 +51,13 @@ func (s *IntegrationTestSuite) SetupSuite() {
 
 	//nolint:testifylint
 	go func() {
-		err := s.server.Run(s.cfg, s.server.InitRoutes())
+		err := s.server.Run(ctx, s.cfg, s.server.InitRoutes())
 		s.Require().NoError(err)
 	}()
+
+	time.Sleep(time.Millisecond * 50)
 }
 
 func TestIntegrationSetupSuite(t *testing.T) {
-	t.Parallel()
-
 	suite.Run(t, new(IntegrationTestSuite))
 }

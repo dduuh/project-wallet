@@ -26,7 +26,7 @@ func New(services *service.Service, userRepo *repository.UsersRepository) *Serve
 	}
 }
 
-func (s *Server) Run(cfg *configs.Config, handler http.Handler) error {
+func (s *Server) Run(ctx context.Context, cfg *configs.Config, handler http.Handler) error {
 	s.server = &http.Server{
 		Addr:           ":" + cfg.HTTP.Port,
 		Handler:        handler,

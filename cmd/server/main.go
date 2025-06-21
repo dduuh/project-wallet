@@ -18,6 +18,8 @@ import (
 )
 
 func main() {
+	ctx := context.Background()
+
 	cfg, err := configs.Init()
 	if err != nil {
 		logrus.Panicf("Configs error: %v\n", err)
@@ -47,14 +49,14 @@ func main() {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 
 	go func() {
-		if err := server.Run(cfg, server.InitRoutes()); err != nil {
+		if err := server.Run(ctx, cfg, server.InitRoutes()); err != nil {
 			logrus.Panicf("HTTP Server error: %v\n", err)
 		}
 	}()
 
 	<-quit
 
-	if err := server.Shutdown(context.Background()); err != nil {
+	if err := server.Shutdown(ctx); err != nil {
 		logrus.Panicf("HTTP Server Shutdown error: %v\n", err)
 	}
 
