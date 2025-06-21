@@ -56,10 +56,6 @@ func main() {
 
 	<-quit
 
-	if err := server.Shutdown(ctx); err != nil {
-		logrus.Panicf("HTTP Server Shutdown error: %v\n", err)
-	}
-
 	if err := psql.Close(); err != nil {
 		logrus.Panicf("PostgreSQL Close error: %v\n", err)
 	}
