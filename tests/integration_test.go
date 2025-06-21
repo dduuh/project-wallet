@@ -19,7 +19,7 @@ type IntegrationTestSuite struct {
 	suite.Suite
 
 	cfg         *configs.Config
-	cancel context.CancelFunc
+	cancel      context.CancelFunc
 	psql        *psql.PostgresDB
 	usersRepo   *repository.UsersRepository
 	walletsRepo *repository.WalletDB
@@ -32,7 +32,7 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	s.cancel = cancel
-	
+
 	var err error
 
 	s.cfg, err = configs.Init()

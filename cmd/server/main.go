@@ -6,15 +6,16 @@ import (
 	"os/signal"
 	"syscall"
 
-	_ "github.com/golang-migrate/migrate/v4/database/postgres"
-	_ "github.com/golang-migrate/migrate/v4/source/file"
-	_ "github.com/lib/pq"
-	"github.com/sirupsen/logrus"
 	configs "wallet-service/internal/config"
 	"wallet-service/internal/repository"
 	postgresql "wallet-service/internal/repository/psql"
 	"wallet-service/internal/service"
 	"wallet-service/internal/transport/rest"
+
+	_ "github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
+	_ "github.com/lib/pq"
+	"github.com/sirupsen/logrus"
 )
 
 func main() {
