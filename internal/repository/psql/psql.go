@@ -9,11 +9,11 @@ import (
 	configs "wallet-service/internal/config"
 )
 
-type postgresDB struct {
+type PostgresDB struct {
 	db *sqlx.DB
 }
 
-func New(cfg *configs.Config) (*postgresDB, error) {
+func New(cfg *configs.Config) (*PostgresDB, error) {
 	db, err := sqlx.Open("postgres", fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
 		cfg.Postgres.Host,
 		cfg.Postgres.Port,
@@ -29,12 +29,12 @@ func New(cfg *configs.Config) (*postgresDB, error) {
 		return nil, fmt.Errorf("failed to ping the PostgreSQL: %w", err)
 	}
 
-	return &postgresDB{
+	return &PostgresDB{
 		db: db,
 	}, nil
 }
 
-func (p *postgresDB) Up() error {
+func (p *PostgresDB) Up() error {
 	driver, err := postgres.WithInstance(p.db.DB, &postgres.Config{})
 	if err != nil {
 		return fmt.Errorf("failed to get PostgreSQL driver: %w", err)
@@ -52,6 +52,14 @@ func (p *postgresDB) Up() error {
 	return nil
 }
 
-func (p *postgresDB) Database() *sqlx.DB {
+func (p *PostgresDB) Close() error {
+	if err := p.db.Close(); err != nil {
+		return fmt.Errorf("failed to close DB connection: %w", err)
+	}
+
+	return nil
+}
+
+func (p *PostgresDB) Database() *sqlx.DB {
 	return p.db
 }

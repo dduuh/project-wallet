@@ -1,6 +1,11 @@
 package main
 
 import (
+	"context"
+	"os"
+	"os/signal"
+	"syscall"
+
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/lib/pq"
@@ -38,9 +43,22 @@ func main() {
 
 	logrus.Infof("HTTP Server started on port %s\n", cfg.HTTP.Port)
 
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+
 	go func() {
 		if err := server.Run(cfg, server.InitRoutes()); err != nil {
 			logrus.Panicf("HTTP Server error: %v\n", err)
 		}
 	}()
+
+	<-quit
+
+	if err := server.Shutdown(context.Background()); err != nil {
+		logrus.Panicf("HTTP Server Shutdown error: %v\n", err)
+	}
+
+	if err := psql.Close(); err != nil {
+		logrus.Panicf("PostgreSQL Close error: %v\n", err)
+	}
 }
