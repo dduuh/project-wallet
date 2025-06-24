@@ -1,17 +1,24 @@
 package tests
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/suite"
 	configs "wallet-service/internal/config"
+	"wallet-service/internal/domain"
 	"wallet-service/internal/repository"
 	"wallet-service/internal/repository/psql"
 	"wallet-service/internal/service"
 	"wallet-service/internal/transport/kafka/producer"
 	"wallet-service/internal/transport/rest"
+
+	"github.com/stretchr/testify/suite"
 )
 
 type IntegrationTestSuite struct {
@@ -60,4 +67,40 @@ func (s *IntegrationTestSuite) SetupSuite() {
 
 func TestIntegrationSetupSuite(t *testing.T) {
 	suite.Run(t, new(IntegrationTestSuite))
+}
+
+func (s *IntegrationTestSuite) sendHTTPRequest(method, path string, statusCode int, entity, result any, user domain.User) {
+	clientHTTP := http.Client{}
+	
+	entityJSON, err := json.Marshal(entity)
+	s.Require().NoError(err)
+
+	url := fmt.Sprintf("http://localhost:%s%s", s.cfg.HTTP.Port, path)
+
+	req, err := http.NewRequest(method, url, bytes.NewReader(entityJSON))
+	s.Require().NoError(err, "failed to create new request")
+
+	resp, err := clientHTTP.Do(req)
+	s.Require().NoError(err)
+
+	defer func() {
+		err := resp.Body.Close()
+		s.Require().NoError(err)
+	}()
+
+	if statusCode != resp.StatusCode {
+		respBody, err := io.ReadAll(resp.Body)
+		s.Require().NoError(err)
+
+		s.T().Logf("response body: %s", string(respBody))
+
+		s.Require().Equal(statusCode, resp.StatusCode, "unexpected status code")
+	}
+
+	if result == nil {
+		return
+	}
+
+	err = json.NewDecoder(resp.Body).Decode(result)
+	s.Require().NoError(err)
 }
