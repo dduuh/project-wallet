@@ -1,10 +1,12 @@
 package tests
 
 import (
+	"encoding/json"
 	"testing"
 	"time"
 
 	configs "wallet-service/internal/config"
+	"wallet-service/internal/domain"
 	"wallet-service/internal/repository"
 	"wallet-service/internal/repository/psql"
 	"wallet-service/internal/service"
@@ -56,3 +58,4 @@ func (s *IntegrationTestSuite) SetupSuite() {
 func TestIntegrationSetupSuite(t *testing.T) {
 	suite.Run(t, new(IntegrationTestSuite))
 }
+
