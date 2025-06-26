@@ -2,6 +2,7 @@ package rest
 
 import (
 	"context"
+	"crypto/rsa"
 	"fmt"
 	"net/http"
 	"time"
@@ -19,6 +20,7 @@ type Server struct {
 	server   *http.Server
 	services *service.Service
 	userRepo *repository.UsersRepository
+	key      *rsa.PublicKey
 }
 
 func New(services *service.Service, userRepo *repository.UsersRepository) *Server {
@@ -37,17 +39,22 @@ func (s *Server) Run(ctx context.Context, cfg *configs.Config, handler http.Hand
 		MaxHeaderBytes: maxHeaderBytes,
 	}
 
+	go func() {
+		<-ctx.Done()
+
+		shutdownCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+		defer cancel()
+
+		//nolint:contextcheck
+		if err := s.Shutdown(shutdownCtx); err != nil {
+			return
+		}
+	}()
+
 	if err := s.server.ListenAndServe(); err != nil {
 		return fmt.Errorf("failed to run the HTTP server: %w", err)
 	}
 
-	shutdownCtx, cancel := context.WithTimeout(ctx, 5 * time.Second)
-	defer cancel()
-
-	if err := s.Shutdown(shutdownCtx); err != nil {
-		return fmt.Errorf("failed to shutdown the HTTP server: %w", err)
-	}
-	
 	return nil
 }
 
@@ -63,6 +70,7 @@ func (s *Server) InitRoutes() *mux.Router {
 	r := mux.NewRouter()
 
 	api := r.PathPrefix("/api/v1").Subrouter()
+	api.Use(s.jwtAuth)
 
 	api.HandleFunc("/wallets", s.getWallets).Methods(http.MethodGet)
 	api.HandleFunc("/wallets/{walletId}", s.getWallet).Methods(http.MethodGet)
