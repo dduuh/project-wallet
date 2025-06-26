@@ -4,11 +4,13 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
-	"github.com/gorilla/mux"
 	configs "wallet-service/internal/config"
 	"wallet-service/internal/repository"
 	"wallet-service/internal/service"
+
+	"github.com/gorilla/mux"
 )
 
 const maxHeaderBytes = 1 << 20
@@ -26,7 +28,7 @@ func New(services *service.Service, userRepo *repository.UsersRepository) *Serve
 	}
 }
 
-func (s *Server) Run(cfg *configs.Config, handler http.Handler) error {
+func (s *Server) Run(ctx context.Context, cfg *configs.Config, handler http.Handler) error {
 	s.server = &http.Server{
 		Addr:           ":" + cfg.HTTP.Port,
 		Handler:        handler,
@@ -39,6 +41,13 @@ func (s *Server) Run(cfg *configs.Config, handler http.Handler) error {
 		return fmt.Errorf("failed to run the HTTP server: %w", err)
 	}
 
+	shutdownCtx, cancel := context.WithTimeout(ctx, 5 * time.Second)
+	defer cancel()
+
+	if err := s.Shutdown(shutdownCtx); err != nil {
+		return fmt.Errorf("failed to shutdown the HTTP server: %w", err)
+	}
+	
 	return nil
 }
 
