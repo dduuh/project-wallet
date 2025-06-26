@@ -82,3 +82,12 @@ func (c *Claims) ValidateToken(resultToken string, secret *rsa.PublicKey) error 
 
 	return nil
 }
+
+func (c *Claims) GetPublicKey() (*rsa.PublicKey, error) {
+	publicKey, err := ReadPublicKey()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get public key")
+	}
+
+	return publicKey, nil
+}
