@@ -30,11 +30,7 @@ func main() {
 	}
 
 	if err := psql.Up(); err != nil {
-		if err.Error() == "no change" {
-			logrus.Info("no migrations to apply")
-		} else {
-			logrus.Panicf("Migrations error: %v\n", err)
-		}
+		logrus.Panicf("Migrations error: %v\n", err)
 	}
 
 	repo := repository.NewUsersRepository(psql.Database())
