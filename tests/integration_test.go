@@ -12,11 +12,16 @@ import (
 
 	configs "wallet-service/internal/config"
 	"wallet-service/internal/domain"
+	jwtclaims "wallet-service/internal/jwt_claims"
 	"wallet-service/internal/repository"
 	"wallet-service/internal/repository/psql"
 	"wallet-service/internal/service"
 	"wallet-service/internal/transport/kafka/producer"
 	"wallet-service/internal/transport/rest"
+
+	_ "github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
+	_ "github.com/lib/pq"
 
 	"github.com/stretchr/testify/suite"
 )
@@ -69,9 +74,21 @@ func TestIntegrationSetupSuite(t *testing.T) {
 	suite.Run(t, new(IntegrationTestSuite))
 }
 
+func (s *IntegrationTestSuite) generateToken(user domain.User) string {
+	claims := jwtclaims.New()
+
+	privateKey, err := jwtclaims.ReadPrivateKey()
+	s.Require().NoError(err)
+
+	token, err := claims.GenerateToken(privateKey)
+	s.Require().NoError(err)
+
+	return token
+}
+
 func (s *IntegrationTestSuite) sendHTTPRequest(method, path string, statusCode int, entity, result any, user domain.User) {
 	clientHTTP := http.Client{}
-	
+
 	entityJSON, err := json.Marshal(entity)
 	s.Require().NoError(err)
 
@@ -79,6 +96,9 @@ func (s *IntegrationTestSuite) sendHTTPRequest(method, path string, statusCode i
 
 	req, err := http.NewRequest(method, url, bytes.NewReader(entityJSON))
 	s.Require().NoError(err, "failed to create new request")
+
+	token := s.generateToken(user)
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 
 	resp, err := clientHTTP.Do(req)
 	s.Require().NoError(err)

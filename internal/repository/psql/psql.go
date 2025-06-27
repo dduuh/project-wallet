@@ -1,12 +1,15 @@
 package psql
 
 import (
+	"errors"
 	"fmt"
+	"log"
+
+	configs "wallet-service/internal/config"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	"github.com/jmoiron/sqlx"
-	configs "wallet-service/internal/config"
 )
 
 type PostgresDB struct {
@@ -40,13 +43,17 @@ func (p *PostgresDB) Up() error {
 		return fmt.Errorf("failed to get PostgreSQL driver: %w", err)
 	}
 
-	m, err := migrate.NewWithDatabaseInstance("file://migrations", "postgres", driver)
+	m, err := migrate.NewWithDatabaseInstance("file://D:/Oracle/LETSGOOOOOO/project-wallet/migrations", "postgres", driver)
 	if err != nil {
 		return fmt.Errorf("failed to get Migrate instance from source URL: %w", err)
 	}
 
 	if err := m.Up(); err != nil {
-		return fmt.Errorf("failed to Up() migrations: %w", err)
+		if errors.Is(err, migrate.ErrNoChange) {
+			log.Println("no migrations to apply")
+		} else {
+			return fmt.Errorf("failed to Up() migrations: %w", err)
+		}
 	}
 
 	return nil

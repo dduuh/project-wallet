@@ -42,7 +42,7 @@ func (s *Server) Run(ctx context.Context, cfg *configs.Config, handler http.Hand
 	go func() {
 		<-ctx.Done()
 
-		shutdownCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
 		//nolint:contextcheck
