@@ -9,8 +9,6 @@ import (
 	"wallet-service/internal/domain"
 )
 
-const userId = "a737d022-eabd-4b04-ac0b-87ee9cb10885"
-
 func (h *Server) createWallet(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		response(w, http.StatusMethodNotAllowed, ErrHTTPMethod)
@@ -20,14 +18,8 @@ func (h *Server) createWallet(w http.ResponseWriter, r *http.Request) {
 
 	var walletInfo domain.WalletInfo
 
-	userIdConv := uuid.MustParse(userId)
-
-	user, err := h.userRepo.GetUser(r.Context(), userIdConv)
-	if err != nil {
-		response(w, http.StatusInternalServerError, err.Error())
-
-		return
-	}
+	ctx := r.Context()
+	userInfo := getUserInfoFromContext(ctx)
 
 	if err := json.NewDecoder(r.Body).Decode(&walletInfo); err != nil {
 		response(w, http.StatusBadRequest, err.Error())
@@ -37,7 +29,7 @@ func (h *Server) createWallet(w http.ResponseWriter, r *http.Request) {
 
 	wallet := domain.Wallet{
 		Id:        uuid.New(),
-		UserId:    user.Id.String(),
+		UserId:    userInfo.Id,
 		Name:      walletInfo.Name,
 		Balance:   walletInfo.Balance,
 		Currency:  walletInfo.Currency,
@@ -46,7 +38,7 @@ func (h *Server) createWallet(w http.ResponseWriter, r *http.Request) {
 		DeletedAt: nil,
 	}
 
-	newWallet, err := h.services.CreateWallet(r.Context(), wallet, user.Id.String())
+	newWallet, err := h.services.CreateWallet(ctx, wallet, userInfo.Id)
 	if err != nil {
 		response(w, http.StatusInternalServerError, err.Error())
 
@@ -72,16 +64,10 @@ func (h *Server) getWallet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userIdConv := uuid.MustParse(userId)
+	ctx := r.Context()
+	userInfo := getUserInfoFromContext(ctx)
 
-	user, err := h.userRepo.GetUser(r.Context(), userIdConv)
-	if err != nil {
-		response(w, http.StatusInternalServerError, err.Error())
-
-		return
-	}
-
-	wlt, err := h.services.GetWallet(r.Context(), walletId, user.Id.String())
+	wlt, err := h.services.GetWallet(ctx, walletId, userInfo.Id)
 	if err != nil {
 		response(w, http.StatusInternalServerError, err.Error())
 
@@ -100,16 +86,10 @@ func (h *Server) getWallets(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userIdConv := uuid.MustParse(userId)
+	ctx := r.Context()
+	userInfo := getUserInfoFromContext(ctx)
 
-	user, err := h.userRepo.GetUser(r.Context(), userIdConv)
-	if err != nil {
-		response(w, http.StatusInternalServerError, err.Error())
-
-		return
-	}
-
-	wallets, err := h.services.GetWallets(r.Context(), user.Id.String())
+	wallets, err := h.services.GetWallets(ctx, userInfo.Id)
 	if err != nil {
 		response(w, http.StatusInternalServerError, err.Error())
 
@@ -135,14 +115,8 @@ func (h *Server) updateWallet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userIdConv := uuid.MustParse(userId)
-
-	user, err := h.userRepo.GetUser(r.Context(), userIdConv)
-	if err != nil {
-		response(w, http.StatusInternalServerError, err.Error())
-
-		return
-	}
+	ctx := r.Context()
+	userInfo := getUserInfoFromContext(ctx)
 
 	var updateWallet domain.WalletUpdate
 
@@ -152,8 +126,8 @@ func (h *Server) updateWallet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	updatedWallet, err := h.services.UpdateWallet(r.Context(), walletId,
-		user.Id.String(), updateWallet)
+	updatedWallet, err := h.services.UpdateWallet(ctx, walletId,
+		userInfo.Id, updateWallet)
 	if err != nil {
 		response(w, http.StatusInternalServerError, err.Error())
 
@@ -179,16 +153,10 @@ func (h *Server) deleteWallet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userIdConv := uuid.MustParse(userId)
+	ctx := r.Context()
+	userInfo := getUserInfoFromContext(ctx)
 
-	user, err := h.userRepo.GetUser(r.Context(), userIdConv)
-	if err != nil {
-		response(w, http.StatusInternalServerError, err.Error())
-
-		return
-	}
-
-	if err := h.services.DeleteWallet(r.Context(), walletId, user.Id.String()); err != nil {
+	if err := h.services.DeleteWallet(ctx, walletId, userInfo.Id); err != nil {
 		response(w, http.StatusInternalServerError, err.Error())
 
 		return

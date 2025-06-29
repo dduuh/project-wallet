@@ -2,8 +2,11 @@ package rest
 
 import (
 	"context"
+	"crypto/rsa"
+	"errors"
 	"fmt"
 	"net/http"
+	"time"
 
 	configs "wallet-service/internal/config"
 	"wallet-service/internal/repository"
@@ -18,16 +21,18 @@ type Server struct {
 	server   *http.Server
 	services *service.Service
 	userRepo *repository.UsersRepository
+	key      *rsa.PublicKey
 }
 
-func New(services *service.Service, userRepo *repository.UsersRepository) *Server {
+func New(services *service.Service, userRepo *repository.UsersRepository, key *rsa.PublicKey) *Server {
 	return &Server{
 		services: services,
 		userRepo: userRepo,
+		key:      key,
 	}
 }
 
-func (s *Server) Run(cfg *configs.Config, handler http.Handler) error {
+func (s *Server) Run(ctx context.Context, cfg *configs.Config, handler http.Handler) error {
 	s.server = &http.Server{
 		Addr:           ":" + cfg.HTTP.Port,
 		Handler:        handler,
@@ -36,9 +41,21 @@ func (s *Server) Run(cfg *configs.Config, handler http.Handler) error {
 		MaxHeaderBytes: maxHeaderBytes,
 	}
 
-	if err := s.server.ListenAndServe(); err != nil {
+	if err := s.server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		return fmt.Errorf("failed to run the HTTP server: %w", err)
 	}
+
+	go func() {
+		<-ctx.Done()
+
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
+		//nolint:contextcheck
+		if err := s.Shutdown(shutdownCtx); err != nil {
+			return
+		}
+	}()
 
 	return nil
 }
@@ -55,6 +72,7 @@ func (s *Server) InitRoutes() *mux.Router {
 	r := mux.NewRouter()
 
 	api := r.PathPrefix("/api/v1").Subrouter()
+	api.Use(s.jwtAuth)
 
 	api.HandleFunc("/wallets", s.getWallets).Methods(http.MethodGet)
 	api.HandleFunc("/wallets/{walletId}", s.getWallet).Methods(http.MethodGet)

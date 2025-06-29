@@ -9,6 +9,7 @@ import (
 	configs "wallet-service/internal/config"
 	"wallet-service/internal/repository"
 	postgresql "wallet-service/internal/repository/psql"
+	jwtclaims "wallet-service/internal/jwt_claims"
 	"wallet-service/internal/service"
 	"wallet-service/internal/transport/rest"
 
@@ -33,25 +34,33 @@ func main() {
 		logrus.Panicf("Migrations error: %v\n", err)
 	}
 
+	pubKey, err := jwtclaims.ReadPublicKey()
+	if err != nil {
+		logrus.Panicf("PublicKey error: %v\n", err)
+	}
+
 	repo := repository.NewUsersRepository(psql.Database())
 	walletRepo := repository.NewWalletRepository(psql.Database())
 	services := service.New(repo, walletRepo)
-	server := rest.New(services, repo)
+	server := rest.New(services, repo, pubKey)
 
 	logrus.Infof("HTTP Server started on port %s\n", cfg.HTTP.Port)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 
 	go func() {
-		if err := server.Run(cfg, server.InitRoutes()); err != nil {
+		if err := server.Run(ctx, cfg, server.InitRoutes()); err != nil {
 			logrus.Panicf("HTTP Server error: %v\n", err)
 		}
 	}()
 
 	<-quit
 
-	if err := server.Shutdown(context.Background()); err != nil {
+	if err := server.Shutdown(ctx); err != nil {
 		logrus.Panicf("HTTP Server Shutdown error: %v\n", err)
 	}
 
