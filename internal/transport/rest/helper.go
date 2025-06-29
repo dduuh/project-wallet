@@ -1,17 +1,14 @@
 package rest
 
 import (
+	"context"
 	"fmt"
 	"net/http"
+	"wallet-service/internal/domain"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 )
-
-// func getUserId(r *http.Request) uuid.UUID {
-// 	userId := r.Context().Value("userId").(string)
-// 	return uuid.MustParse(userId)
-// }
 
 func getWalletId(r *http.Request) (uuid.UUID, error) {
 	walletId := mux.Vars(r)["walletId"]
@@ -22,4 +19,10 @@ func getWalletId(r *http.Request) (uuid.UUID, error) {
 	}
 
 	return walletIdParsed, nil
+}
+
+func getUserInfoFromContext(ctx context.Context) domain.UserInfo {
+	userInfo, _ := ctx.Value(userIdContext).(domain.UserInfo)
+
+	return userInfo
 }

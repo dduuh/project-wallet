@@ -4,15 +4,16 @@ import (
 	"context"
 	"errors"
 
+	configs "wallet-service/internal/config"
+	"wallet-service/internal/repository"
+	postgresql "wallet-service/internal/repository/psql"
+	"wallet-service/internal/transport/kafka/consumer"
+
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/lib/pq"
 	"github.com/sirupsen/logrus"
-	configs "wallet-service/internal/config"
-	"wallet-service/internal/repository"
-	postgresql "wallet-service/internal/repository/psql"
-	"wallet-service/internal/transport/kafka/consumer"
 )
 
 func main() {

@@ -6,15 +6,17 @@ import (
 	"os/signal"
 	"syscall"
 
+	configs "wallet-service/internal/config"
+	"wallet-service/internal/repository"
+	postgresql "wallet-service/internal/repository/psql"
+	jwtclaims "wallet-service/internal/jwt_claims"
+	"wallet-service/internal/service"
+	"wallet-service/internal/transport/rest"
+
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/lib/pq"
 	"github.com/sirupsen/logrus"
-	configs "wallet-service/internal/config"
-	"wallet-service/internal/repository"
-	postgresql "wallet-service/internal/repository/psql"
-	"wallet-service/internal/service"
-	"wallet-service/internal/transport/rest"
 )
 
 func main() {
@@ -31,19 +33,23 @@ func main() {
 	}
 
 	if err := psql.Up(); err != nil {
-		if err.Error() == "no change" {
-			logrus.Info("no migrations to apply")
-		} else {
-			logrus.Panicf("Migrations error: %v\n", err)
-		}
+		logrus.Panicf("Migrations error: %v\n", err)
+	}
+
+	pubKey, err := jwtclaims.ReadPublicKey()
+	if err != nil {
+		logrus.Panicf("PublicKey error: %v\n", err)
 	}
 
 	repo := repository.NewUsersRepository(psql.Database())
 	walletRepo := repository.NewWalletRepository(psql.Database())
 	services := service.New(repo, walletRepo)
-	server := rest.New(services, repo)
+	server := rest.New(services, repo, pubKey)
 
 	logrus.Infof("HTTP Server started on port %s\n", cfg.HTTP.Port)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
@@ -56,6 +62,13 @@ func main() {
 
 	<-quit
 
+<<<<<<< HEAD
+	if err := server.Shutdown(ctx); err != nil {
+		logrus.Panicf("HTTP Server Shutdown error: %v\n", err)
+	}
+
+=======
+>>>>>>> 75e84a18a119dcf4c0fc171fbe504bdb132894dd
 	if err := psql.Close(); err != nil {
 		logrus.Panicf("PostgreSQL Close error: %v\n", err)
 	}
