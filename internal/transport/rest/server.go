@@ -45,7 +45,7 @@ func (s *Server) Run(ctx context.Context, cfg *configs.Config, handler http.Hand
 		return fmt.Errorf("failed to run the HTTP server: %w", err)
 	}
 
-<<<<<<< HEAD
+
 	go func() {
 		<-ctx.Done()
 
@@ -58,7 +58,6 @@ func (s *Server) Run(ctx context.Context, cfg *configs.Config, handler http.Hand
 		}
 	}()
 
-=======
 	shutdownCtx, cancel := context.WithTimeout(ctx, 5 * time.Second)
 	defer cancel()
 
@@ -66,7 +65,6 @@ func (s *Server) Run(ctx context.Context, cfg *configs.Config, handler http.Hand
 		return fmt.Errorf("failed to shutdown the HTTP server: %w", err)
 	}
 	
->>>>>>> 75e84a18a119dcf4c0fc171fbe504bdb132894dd
 	return nil
 }
 
