@@ -20,6 +20,8 @@ import (
 )
 
 func main() {
+	ctx := context.Background()
+
 	cfg, err := configs.Init()
 	if err != nil {
 		logrus.Panicf("Configs error: %v\n", err)
@@ -60,10 +62,13 @@ func main() {
 
 	<-quit
 
+<<<<<<< HEAD
 	if err := server.Shutdown(ctx); err != nil {
 		logrus.Panicf("HTTP Server Shutdown error: %v\n", err)
 	}
 
+=======
+>>>>>>> 75e84a18a119dcf4c0fc171fbe504bdb132894dd
 	if err := psql.Close(); err != nil {
 		logrus.Panicf("PostgreSQL Close error: %v\n", err)
 	}
