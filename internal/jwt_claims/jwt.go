@@ -8,10 +8,11 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 )
 
 type Claims struct {
-	UserId string `json:"userId"`
+	UserId uuid.UUID `json:"id"`
 	jwt.RegisteredClaims
 }
 

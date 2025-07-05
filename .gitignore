@@ -1,1 +1,3 @@
 .golangci.yml
+.vscode
+ignore.txt

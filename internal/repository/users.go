@@ -4,9 +4,10 @@ import (
 	"context"
 	"fmt"
 
+	"wallet-service/internal/domain"
+
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
-	"wallet-service/internal/domain"
 )
 
 type UsersRepository struct {
@@ -45,4 +46,15 @@ func (u *UsersRepository) GetUser(ctx context.Context, userId uuid.UUID) (domain
 	}
 
 	return user, nil
+}
+
+func (u *UsersRepository) Truncate(ctx context.Context) error {
+	query := `DELETE FROM users`
+
+	_, err := u.psql.ExecContext(ctx, query)
+	if err != nil {
+		return fmt.Errorf("failed to delete all columns in table")
+	}
+
+	return nil
 }

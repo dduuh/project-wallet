@@ -62,7 +62,6 @@ func main() {
 
 	<-quit
 
-
 	if err := server.Shutdown(ctx); err != nil {
 		logrus.Panicf("HTTP Server Shutdown error: %v\n", err)
 	}

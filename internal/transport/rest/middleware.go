@@ -45,8 +45,7 @@ func (s *Server) jwtAuth(next http.Handler) http.Handler {
 			return
 		}
 
-		logrus.Infof("token: %s\n", partsOfHeader[1])
-		token, err := jwt.ParseWithClaims(partsOfHeader[1], claims_jwt.Claims{}, func(t *jwt.Token) (any, error) {
+		token, err := jwt.ParseWithClaims(partsOfHeader[1], &claims_jwt.Claims{}, func(t *jwt.Token) (any, error) {
 			if _, ok := t.Method.(*jwt.SigningMethodRSA); !ok {
 				return nil, claims_jwt.ErrInvalidSigningMethod
 			}
@@ -66,8 +65,6 @@ func (s *Server) jwtAuth(next http.Handler) http.Handler {
 			response(w, http.StatusUnauthorized, ErrUnauthorized)
 
 			return
-		} else {
-			logrus.Infof("Claims: %v\n", claims)
 		}
 
 		if claims.ExpiresAt.Before(time.Now()) {
