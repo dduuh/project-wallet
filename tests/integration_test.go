@@ -3,9 +3,7 @@ package tests
 import (
 	"bytes"
 	"context"
-
 	"crypto/rsa"
-
 	"encoding/json"
 	"fmt"
 	"io"
@@ -51,7 +49,6 @@ func (s *IntegrationTestSuite) SetupSuite() {
 
 	s.cancelFunc = cancel
 
-
 	var err error
 
 	s.cfg, err = configs.Init()
@@ -91,7 +88,7 @@ func TestIntegrationSetupSuite(t *testing.T) {
 func (s *IntegrationTestSuite) getToken(user domain.User) string {
 	tokenTime := time.Now().Add(time.Hour * 24)
 
-	claims := jwtclaims.Claims{
+	claims := &jwtclaims.Claims{
 		UserId: user.Id,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(tokenTime),
@@ -105,14 +102,12 @@ func (s *IntegrationTestSuite) getToken(user domain.User) string {
 	token, err := claims.GenerateToken(privateKey)
 	s.Require().NoError(err)
 
-	// logrus.Warnf("claims: %v\n", claims)
-	// logrus.Warnf("token: %v\n", token)
 	return token
 }
 
 func (s *IntegrationTestSuite) sendHTTPRequest(method, path string, statusCode int, entity, result any, user domain.User) {
 	clientHTTP := http.Client{}
-	
+
 	entityJSON, err := json.Marshal(entity)
 	s.Require().NoError(err)
 
@@ -122,7 +117,8 @@ func (s *IntegrationTestSuite) sendHTTPRequest(method, path string, statusCode i
 	s.Require().NoError(err, "failed to create new request")
 
 	token := s.getToken(user)
-	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := clientHTTP.Do(req)
 	s.Require().NoError(err)
@@ -132,21 +128,21 @@ func (s *IntegrationTestSuite) sendHTTPRequest(method, path string, statusCode i
 		s.Require().NoError(err)
 	}()
 
-	if statusCode != resp.StatusCode {
-		respBody, err := io.ReadAll(resp.Body)
-		s.Require().NoError(err)
+	respBody, err := io.ReadAll(resp.Body)
+	s.Require().NoError(err)
 
-		s.T().Logf("response body: %s", string(respBody))
+	if statusCode != resp.StatusCode {
+		s.T().Logf("response body (statusCode): %s", string(respBody))
 
 		s.Require().Equal(statusCode, resp.StatusCode, "unexpected status code")
 
 		return
 	}
 
-	if result == nil {
-		return
+	if result != nil {
+		buffer := bytes.NewBuffer(respBody)
+		
+		err := json.NewDecoder(buffer).Decode(result)
+		s.Require().NoError(err)
 	}
-
-	err = json.NewDecoder(resp.Body).Decode(result)
-	s.Require().NoError(err)
 }

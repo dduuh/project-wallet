@@ -10,41 +10,32 @@ import (
 
 const walletPath = `/api/v1/wallets`
 
-var existingUser = domain.User{
-	Id: uuid.NewString(),
-}
+var (
+	existingUser = domain.User{
+		Id: uuid.New(),
+	}
+)
 
 func (s *IntegrationTestSuite) TestCreateWallet() {
 	wallet := domain.Wallet{
 		Id:       uuid.New(),
-		UserId:   uuid.NewString(),
 		Name:     "wallet 1",
-
-		Balance:  0.0,
-
 		Currency: "USD",
 	}
 
 	s.Run("user not found", func() {
-		s.sendHTTPRequest(http.MethodGet, walletPath, http.StatusNotFound, &wallet, nil, existingUser)
+		s.sendHTTPRequest(http.MethodPost, walletPath, http.StatusNotFound, &wallet, nil, domain.User{
+			Id: uuid.New(),
+		})
 	})
 
 	s.Run("wallet successfully created", func() {
 		err := s.usersRepo.UpsertUser(context.Background(), existingUser)
 		s.Require().NoError(err)
 
-
 		wallet.UserId = existingUser.Id
 
-		var createdWallet domain.Wallet
-
-		s.sendHTTPRequest(http.MethodPost, walletPath, http.StatusCreated, &wallet, &createdWallet, existingUser)
-
-		s.Require().Equal(wallet.Id, createdWallet.Id)
-		s.Require().Equal(wallet.UserId, existingUser.Id)
-		s.Require().Equal(wallet.UserId, createdWallet.UserId)
-		s.Require().Equal(wallet.Name, createdWallet.Name)
-		s.Require().Equal(wallet.Balance, createdWallet.Balance)
+		s.sendHTTPRequest(http.MethodPost, walletPath, http.StatusCreated, &wallet, nil, existingUser)
 	})
 
 	s.Run("wallet doesn't belong to the user", func() {
@@ -52,70 +43,63 @@ func (s *IntegrationTestSuite) TestCreateWallet() {
 		s.Require().NoError(err)
 
 		otherUser := domain.User{
-			Id: uuid.NewString(),
+			Id: uuid.New(),
 		}
 
-		err = s.usersRepo.UpsertUser(context.Background(), otherUser)
-		s.Require().NoError(err)
+		otherWallet := domain.Wallet{
+			Id:       uuid.New(),
+			UserId:   otherUser.Id,
+			Name:     wallet.Name,
+			Currency: wallet.Currency,
+		}
 
-		existingUser.Id = otherUser.Id
-
-
-		s.sendHTTPRequest(http.MethodGet, walletPath, http.StatusUnauthorized, &wallet, nil, existingUser)
-
+		s.sendHTTPRequest(http.MethodPost, walletPath, http.StatusNotFound, &otherWallet, nil, otherUser)
 	})
 }
 
 func (s *IntegrationTestSuite) TestGetWallet() {
 	wallet := domain.Wallet{
-		Id: uuid.New(),
-		UserId: existingUser.Id,
-		Name: "wallet 1",
-		Balance: 200.0,
+		Id:       uuid.New(),
+		Name:     "wallet 1",
+		Balance:  200.0,
 		Currency: "USD",
 	}
 
 	err := s.usersRepo.UpsertUser(context.Background(), existingUser)
 	s.Require().NoError(err)
 
-	var createdWallet domain.Wallet
+	s.sendHTTPRequest(http.MethodPost, walletPath, http.StatusCreated, &wallet, nil, existingUser)
 
-	s.sendHTTPRequest(http.MethodGet, walletPath, http.StatusCreated, &wallet, &createdWallet, existingUser)
+	wallet.UserId = existingUser.Id
 
-	s.Run("user not found", func() {		
-		s.sendHTTPRequest(http.MethodGet, walletPath, http.StatusNotFound, nil, nil, existingUser)
+	s.Run("user not found", func() {
+		s.sendHTTPRequest(http.MethodHead, walletPath, http.StatusNotFound, &wallet, nil, domain.User{
+			Id: uuid.New(),
+		})
 	})
 
 	s.Run("get wallet successfully", func() {
-		walletId := uuid.UUID(createdWallet.Id).String()
-		fullWalletPath := walletPath + "/" + walletId
+		fullWalletPath := walletPath + "/" + wallet.Id.String()
 
-		s.sendHTTPRequest(http.MethodGet, fullWalletPath, http.StatusOK, nil, &createdWallet, existingUser)
-
-		s.Require().Equal(wallet.Id, createdWallet.Id)
-		s.Require().Equal(wallet.Id, createdWallet.Id)
-		s.Require().Equal(wallet.UserId, createdWallet.UserId)
-		s.Require().Equal(wallet.Name, createdWallet.Name)
-		s.Require().Equal(wallet.Balance, createdWallet.Balance)
-		s.Require().Equal(wallet.Currency, createdWallet.Currency)
+		s.sendHTTPRequest(http.MethodGet, fullWalletPath, http.StatusOK, &wallet, nil, existingUser)
 	})
 
 	s.Run("wallet not found", func() {
-		walletId := uuid.New().String()
+		walletId := uuid.NewString()
 		fullWalletPath := walletPath + "/" + walletId
 
-		s.sendHTTPRequest(http.MethodGet, fullWalletPath, http.StatusNotFound, nil, nil, existingUser)
+		s.sendHTTPRequest(http.MethodGet, fullWalletPath, http.StatusNotFound, &wallet, nil, existingUser)
 	})
 
 	s.Run("wallet doesn't belong to the user", func() {
 		otherUser := domain.User{
-			Id: uuid.NewString(),
+			Id: uuid.New(),
 		}
 
 		err := s.usersRepo.UpsertUser(context.Background(), otherUser)
 		s.Require().NoError(err)
 
-		walletId := uuid.UUID(createdWallet.Id).String()
+		walletId := wallet.Id.String()
 		fullWalletPath := walletPath + "/" + walletId
 
 		s.sendHTTPRequest(http.MethodGet, fullWalletPath, http.StatusNotFound, nil, nil, otherUser)
@@ -124,35 +108,23 @@ func (s *IntegrationTestSuite) TestGetWallet() {
 
 func (s *IntegrationTestSuite) TestUpdateWallet() {
 	wallet := domain.Wallet{
-		Id: uuid.New(),
-		UserId: existingUser.Id,
-		Name: "wallet 1",
-		Balance: 250.0,
+		Id:       uuid.New(),
+		Name:     "wallet 1",
+		Balance:  250.0,
 		Currency: "USD",
 	}
 
 	err := s.usersRepo.UpsertUser(context.Background(), existingUser)
 	s.Require().NoError(err)
 
-	var createdWallet domain.Wallet
-	
-	s.sendHTTPRequest(http.MethodPost, walletPath, http.StatusCreated, &wallet, &createdWallet, existingUser)
+	s.sendHTTPRequest(http.MethodPost, walletPath, http.StatusCreated, &wallet, nil, existingUser)
+
+	wallet.UserId = existingUser.Id
 
 	s.Run("user not found", func() {
-		nonExistingUser := domain.User{
-			Id: uuid.NewString(),
-		}
-	
-		s.sendHTTPRequest(http.MethodGet, walletPath, http.StatusNotFound, nil, nil, nonExistingUser)
-	})
-
-	
-	s.Run("user not found", func() {
-		nonExistingUser := domain.User{
-			Id: uuid.NewString(),
-		}
-
-		s.sendHTTPRequest(http.MethodPatch, walletPath, http.StatusNotFound, nil, nil, nonExistingUser)
+		s.sendHTTPRequest(http.MethodPatch, walletPath, http.StatusNotFound, nil, nil, domain.User{
+			Id: uuid.New(),
+		})
 	})
 
 	s.Run("wallet not found", func() {
@@ -163,27 +135,23 @@ func (s *IntegrationTestSuite) TestUpdateWallet() {
 	})
 
 	s.Run("wallet updated successfully", func() {
-		updatedWallet := domain.Wallet{
-			Name: "Blue frog",
-		}
+		wallet.Name = "Blue frog"
 
-		walletId := uuid.UUID(createdWallet.Id).String()
-		fullWalletPath := walletPath + "/" + walletId
+		walletIdU := wallet.Id.String()
+		fullWalletPath := walletPath + "/" + walletIdU
 
-		s.sendHTTPRequest(http.MethodPatch, fullWalletPath, http.StatusOK, &updatedWallet, &createdWallet, existingUser)
-
-		s.Require().Equal(updatedWallet.Name, createdWallet.Name)
+		s.sendHTTPRequest(http.MethodPatch, fullWalletPath, http.StatusOK, &wallet, nil, existingUser)
 	})
 
 	s.Run("wallet doesn't belong to the user", func() {
 		otherUser := domain.User{
-			Id: uuid.NewString(),
+			Id: uuid.New(),
 		}
 
 		err := s.usersRepo.UpsertUser(context.Background(), otherUser)
 		s.Require().NoError(err)
 
-		walletId := uuid.UUID(createdWallet.Id).String()
+		walletId := wallet.Id.String()
 		fullWalletPath := walletPath + "/" + walletId
 
 		s.sendHTTPRequest(http.MethodGet, fullWalletPath, http.StatusNotFound, nil, nil, otherUser)
@@ -192,51 +160,47 @@ func (s *IntegrationTestSuite) TestUpdateWallet() {
 
 func (s *IntegrationTestSuite) TestDeleteWallet() {
 	wallet := domain.Wallet{
-		Id: uuid.New(),
-		UserId: existingUser.Id,
-		Name: "wallet 1",
-		Balance: 300.0,
+		Id:       uuid.New(),
+		UserId:   existingUser.Id,
+		Name:     "wallet 1",
+		Balance:  300.0,
 		Currency: "USD",
 	}
 
 	err := s.usersRepo.UpsertUser(context.Background(), existingUser)
 	s.Require().NoError(err)
 
-	var createdWallet domain.Wallet
+	s.sendHTTPRequest(http.MethodPost, walletPath, http.StatusCreated, &wallet, nil, existingUser)
 
-	s.sendHTTPRequest(http.MethodPost, walletPath, http.StatusCreated, &wallet, &createdWallet, existingUser)
+	wallet.UserId = existingUser.Id
 
 	s.Run("user not found", func() {
-		nonExistingUser := domain.User{
-			Id: uuid.NewString(),
-		}
-
-		s.sendHTTPRequest(http.MethodGet, walletPath, http.StatusNotFound, nil, nil, nonExistingUser)
+		s.sendHTTPRequest(http.MethodDelete, walletPath, http.StatusNotFound, &wallet, nil, existingUser)
 	})
 
 	s.Run("wallet not found", func() {
-		walletId := uuid.New().String()
+		walletId := uuid.NewString()
 		fullWalletPath := walletPath + "/" + walletId
 
 		s.sendHTTPRequest(http.MethodGet, fullWalletPath, http.StatusNotFound, nil, nil, existingUser)
 	})
 
 	s.Run("wallet successfully deleted", func() {
-		walletId := uuid.UUID(createdWallet.Id).String()
+		walletId := wallet.Id.String()
 		fullWalletPath := walletPath + "/" + walletId
 
-		s.sendHTTPRequest(http.MethodDelete, fullWalletPath, http.StatusNoContent, nil, nil, existingUser)
+		s.sendHTTPRequest(http.MethodDelete, fullWalletPath, http.StatusNoContent, &wallet, nil, existingUser)
 	})
 
 	s.Run("wallet doesn't belong to the user", func() {
 		otherUser := domain.User{
-			Id: uuid.NewString(),
+			Id: uuid.New(),
 		}
 
 		err := s.usersRepo.UpsertUser(context.Background(), otherUser)
 		s.Require().NoError(err)
 
-		walletId := uuid.UUID(createdWallet.Id).String()
+		walletId := wallet.Id.String()
 		fullWalletPath := walletPath + "/" + walletId
 
 		s.sendHTTPRequest(http.MethodGet, fullWalletPath, http.StatusNotFound, nil, nil, otherUser)
@@ -244,14 +208,14 @@ func (s *IntegrationTestSuite) TestDeleteWallet() {
 }
 
 func (s *IntegrationTestSuite) TestGetWallets() {
-	err := s.usersRepo.UpsertUser(context.Background(), existingUser)
+	err := s.usersRepo.Truncate(context.Background())
 	s.Require().NoError(err)
 
-	var arrWallets []domain.Wallet
+	err = s.usersRepo.UpsertUser(context.Background(), existingUser)
+	s.Require().NoError(err)
 
 	wallet1 := domain.Wallet{
 		Id:       uuid.New(),
-		UserId:   existingUser.Id,
 		Name:     "wallet 1",
 		Balance:  100.0,
 		Currency: "USD",
@@ -259,66 +223,58 @@ func (s *IntegrationTestSuite) TestGetWallets() {
 
 	wallet2 := domain.Wallet{
 		Id:       uuid.New(),
-		UserId:   existingUser.Id,
 		Name:     "wallet 2",
-		Balance:  50.0,
+		Balance:  250.0,
 		Currency: "RUB",
 	}
 
 	wallet3 := domain.Wallet{
 		Id:       uuid.New(),
-		UserId:   existingUser.Id,
 		Name:     "wallet 3",
 		Balance:  1000.0,
 		Currency: "USD",
 	}
-	
-	arrWallets = append(arrWallets, wallet1, wallet2, wallet3)
 
-	_, err = s.psql.Database().ExecContext(context.Background(),
-		`INSERT INTO wallets (name) VALUES ($1) WHERE id = $2 AND user_id = $3`,
-	wallet1.Name, wallet1.Id, wallet1.UserId)
-	s.Require().NoError(err)
-
-	_, err = s.psql.Database().ExecContext(context.Background(),
-		`INSERT INTO wallets (name) VALUES ($1) WHERE id = $2 AND user_id = $3`,
-		wallet2.Name, wallet2.Id, wallet2.UserId)
-	s.Require().NoError(err)
-
-	_, err = s.psql.Database().ExecContext(context.Background(),
-		`INSERT INTO wallets (name) VALUES ($1) WHERE id = $2 AND user_id = $3`,
-
-		wallet3.Name, wallet3.Id, wallet3.UserId)
-
-	s.Require().NoError(err)
-
-	var created1, created2, created3 domain.Wallet
-
-	s.sendHTTPRequest(http.MethodPost, walletPath, http.StatusCreated, &wallet1, &created1, existingUser)
-	s.sendHTTPRequest(http.MethodPost, walletPath, http.StatusCreated, &wallet2, &created2, existingUser)
-	s.sendHTTPRequest(http.MethodPost, walletPath, http.StatusCreated, &wallet3, &created3, existingUser)
-
-	s.Run("get successfully all wallets", func() {
-		var wallets []domain.Wallet
+	s.Run("empty list", func() {
+		var wallets domain.Wallets
 
 		s.sendHTTPRequest(http.MethodGet, walletPath, http.StatusOK, nil, &wallets, existingUser)
 
-		s.Require().Len(wallets, len(arrWallets))
+		s.Require().Len(wallets.Wallets, 0)
+	})
+
+	wallet1.UserId = existingUser.Id
+	created1 := domain.Wallet{}
+
+	s.sendHTTPRequest(http.MethodPost, walletPath, http.StatusCreated, &wallet1, &created1, existingUser)
+
+	wallet2.UserId = existingUser.Id
+	created2 := domain.Wallet{}
+
+	s.sendHTTPRequest(http.MethodPost, walletPath, http.StatusCreated, &wallet2, &created2, existingUser)
+
+	wallet3.UserId = existingUser.Id
+	created3 := domain.Wallet{}
+
+	s.sendHTTPRequest(http.MethodPost, walletPath, http.StatusCreated, &wallet3, &created3, existingUser)
+
+	s.Run("get successfully all wallets", func() {
+		var wallets domain.Wallets
+
+		s.sendHTTPRequest(http.MethodGet, walletPath, http.StatusOK, nil, &wallets, existingUser)
+
+		s.Require().Len(wallets.Wallets, 3)
 	})
 
 	s.Run("user doesn't own any wallets", func() {
 		otherUser := domain.User{
-			Id: uuid.NewString(),
+			Id: uuid.New(),
 		}
 
-		err := s.usersRepo.UpsertUser(context.Background(), otherUser)
-		s.Require().NoError(err)
+		var wallets domain.Wallets
 
-		var wallets []domain.Wallet
+		s.sendHTTPRequest(http.MethodGet, walletPath, http.StatusNotFound, nil, nil, otherUser)
 
-		s.sendHTTPRequest(http.MethodGet, walletPath, http.StatusNotFound, nil, &wallets, otherUser)
-
-		s.Require().Len(wallets, 0)
+		s.Require().Len(wallets.Wallets, 0)
 	})
-
 }
